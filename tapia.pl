@@ -7,14 +7,14 @@
 
 defecto(0,"sin defecto",[1,2,3,4,5]).
 defecto(1,"herida cicatrizada",[1,2,3,4,5,11,13,14,19,20,22,28,29]).
-defecto(2,"machucon",[1,2,3,4,5,11,13,14,15,21,22,26,28]).
+defecto(2,"machucon",[1,2,3,4,5,11,13,14,21,22,26,28]).
 defecto(3,"perforacion cicatrizada",[1,2,3,4,5,11,13,18,22,26,29]).
 defecto(4,"fruto gemelo",[1,2,3,4,5,12,16,21,23,24,29]).
 defecto(5,"quemadura solar",[1,2,3,4,5,9,13,14,21,27,29]).
 defecto(6,"fruto doble",[1,2,3,4,5,12,16,21,24,29]).
 defecto(7,"sin color",[7,12,16,21,27,29]).
 defecto(8,"pitting",[1,2,3,4,5,11,15,16,21,26,28]).
-defecto(9,"sin pedicelo",[1,2,3,4,5,12,16,21,25,29]).
+defecto(9,"sin pedunculo",[1,2,3,4,5,12,16,21,25,29]).
 defecto(10,"medialuna",[1,2,3,4,5,11,14,20,22,29]).
 defecto(11,"fruto arrugado",[1,2,3,4,5,8,13,14,15,21,27,28]).
 defecto(12,"madurez excesiva",[6,8,14,21,27,28]).
@@ -56,7 +56,7 @@ caracteristica(21,"sin corte/desgarro").
 caracteristica(22,"hendidura").
 caracteristica(23,"protuberancia baja").
 caracteristica(24,"protuberancia grande").
-caracteristica(25,"sin predicileo").
+caracteristica(25,"sin pedunculo").
 caracteristica(26,"hundimiento").
 caracteristica(27,"sin deformidad").
 
@@ -86,7 +86,7 @@ calibre(16,0,"desecho").
 %Saliadas linea de embalaje
 %salidaEmbalaje(ID,Nombre,Defectos,Calibres)
 salidaEmbalaje(1,"exportable",[0,9],[8,9,10,11,12,13,14,15]).
-salidaEmbalaje(2,"mercado interno",[1,4,5,6,7,8,10,11],[1,2,3,4,5,6,7]).
+salidaEmbalaje(2,"mercado interno",[1,2,4,5,6,7,8,10,11],[1,2,3,4,5,6,7]).
 salidaEmbalaje(3,"desechable",[2,3,12],[16]).
 
 calibreIgual("exportable","exportable").
@@ -122,7 +122,8 @@ detectarDefectoIterativo(DefectoID,Nombre,[X|Xs]):- caracteristica(IDCaracterist
 
 
 %############### Pregunta 3: ###############
-%Parte a:
+
+%############### Parte a: ##################
 
 %Predicado: encontrarConjuntoDefectos
 %Dominio: [ListaResultante],[CaracteristicasIngresadas]
@@ -140,34 +141,58 @@ recorrerListaDefectos([],[],_).
 recorrerListaDefectos([X|Xs],[Nombre|Ys],CaracteristicasIngresadas):- recorrerListaDefectos(Xs,Ys,CaracteristicasIngresadas),detectarDefecto(X,Nombre,CaracteristicasIngresadas).
 recorrerListaDefectos([_|Xs],ListaResultante,CaracteristicasIngresadas):- recorrerListaDefectos(Xs,ListaResultante,CaracteristicasIngresadas).
 
-%Parte b:
+%############### Parte b: ##################
+
+%Predicado: buscarCalibre
+%Dominio: CalibreID,Calibre,DatoIngresado
+%Meta primaria: Encontrar el nombre e ID del calibre.
 
 buscarCalibre(CalibreID,Calibre,DatoIngresado):- calibre(CalibreID,Calibre,DatoIngresado),!.
 
+
+%Predicado: encontrarSalida
+%Dominio: [ListaDefectos],Salida,NombreCalibre,[Caracteristicas],Calibre
+%Meta primaria: Entrega los detalles de las cerezas.
 
 encontrarSalida(ListaDefectos,Salida,NombreCalibre,Caracteristicas,Calibre):- buscarCalibre(CalibreID,Calibre,NombreCalibre),listaSalidaEmbalaje(ListaSalidas), encontrarConjuntoDefectos(ListaDefectos,Caracteristicas),
                                                                               encontrarSalidaVentaIterativo(ListaSalidas,ListaDefectos,CalibreID,TiposVentaUno),encontarSalidaDefectoIterativo(ListaSalidas,ListaDefectos,CalibreID,TiposVentaDos),
                                                                               aplanarLista(TiposVentaDos,TiposVentaDosAux),union(TiposVentaUno,TiposVentaDosAux,SalidaAux),comprobarVenta(Salida,SalidaAux),!.
 
+%Predicado: encontrarSalidaVentaIterativo
+%Dominio: [ListaSalidas],[ListaDefectos],CalibreID,TiposVenta
+%Meta primaria: Revisa que tipo de venta se debe realizar según el calibre
+
 encontrarSalidaVentaIterativo([],_,_,[]).
 encontrarSalidaVentaIterativo([X|Xs],_,CalibreID,[Y|Ys]):- encontrarSalidaVentaIterativo(Xs,_,CalibreID,Ys),salidaEmbalaje(X,NombreVenta,_,CalibresSalida),member(CalibreID,CalibresSalida),Y = NombreVenta.
 encontrarSalidaVentaIterativo([_|Xs],_,CalibreID,TiposVenta):- encontrarSalidaVentaIterativo(Xs,_,CalibreID,TiposVenta).
 
+%Predicado: encontarSalidaDefectoIterativo
+%Dominio: [ListaSalidas],[ListaDefectos],CalibreID,TiposVenta
+%Meta primaria: Revisa que tipo de venta se debe realizar según los defectos, entregando una lista de ventas
 
 encontarSalidaDefectoIterativo([],_,_,[]).
 encontarSalidaDefectoIterativo([X|Xs],ListaDefectos,_,[Y|Ys]):- encontarSalidaDefectoIterativo(Xs,ListaDefectos,_,Ys),salidaEmbalaje(X,NombreVenta,DefectosSalida,_),
                                                                     perteneceDefectoIterativoSalida(TiposVenta,ListaDefectos,DefectosSalida,NombreVenta),Y = TiposVenta.
 encontarSalidaDefectoIterativo([_|Xs],ListaDefectos,_,TiposVenta):- encontarSalidaDefectoIterativo(Xs,ListaDefectos,_,TiposVenta).
 
+%Predicado: perteneceDefectoIterativoSalida
+%Dominio: TiposVenta,[ListaDefectos],DefectosSalida,NombreVenta
+%Meta primaria: Comprueba que defectos pertenecen a cada salida de embalaje con sus respectivos tipos de ventas
 
 perteneceDefectoIterativoSalida([],[],_,_).
 perteneceDefectoIterativoSalida([X|Xs],[Y|Ys],DefectosSalida,NombreVenta):- perteneceDefectoIterativoSalida(Xs,Ys,DefectosSalida,NombreVenta),defecto(DefectoID,Y,_),member(DefectoID,DefectosSalida),X = NombreVenta.
 perteneceDefectoIterativoSalida(TiposVenta,[_|Ys],DefectosSalida,NombreVenta):- perteneceDefectoIterativoSalida(TiposVenta,Ys,DefectosSalida,NombreVenta).
 
+%Se encarga de generar una lista sin anidamientos internos.
+%[a,[b,c],[z,[x,y,[r,l]]]] -> [a, b, c, z, x, y, r, l]
+
 aplanarLista([],[]).
 aplanarLista([X|Xs],Resultado):- aplanarLista(X,ApX),aplanarLista(Xs,ApXs),append(ApX,ApXs,Resultado).
 aplanarLista(X,[X]).
 
+%Predicado comprobarVenta
+%Dominio: Salida,[SalidaAuxiliar]
+%Comprueba que tipo de venta ser hará
 
 comprobarVenta(Salida,SalidaAux):- member("desechable",SalidaAux),Salida = "desechable".
 comprobarVenta(Salida,SalidaAux):- member("mercado interno",SalidaAux), Salida = "mercado interno".
